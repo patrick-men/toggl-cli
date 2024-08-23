@@ -59,15 +59,14 @@ function entry_json_parser() {
     json_tags=$(echo $1 | jq -r '.tags')
     
     # start time formatting
+    json_start_time=$(echo $1 | jq -r '.start')
     json_start_time=${json_start_time%+00:00}  # remove +00:00
-    json_start_time_unix=$(date -j -f "%Y-%m-%dT%H:%M:%S" "$json_start_time" +"%s")
+    json_start_time_unix=$(date -j -u -f "%Y-%m-%dT%H:%M:%S" "$json_start_time" +"%s")
     formatted_start_time=$(date -r $json_start_time_unix "+%d.%m.%y, %H:%M:%S")
 
     # running time calc
-    json_running_time=$(echo $1 | jq -r '.duration')
     current_time_unix=$(date +%s)
-
-    running_time_seconds=$((current_time_unix + json_running_time))
+    running_time_seconds=$((current_time_unix - json_start_time_unix))
 
     days=$((running_time_seconds/86400))
     hours=$((running_time_seconds/3600%24))
@@ -97,14 +96,12 @@ function recent_entries_parser() {
         
         # start time formatting
         json_start_time=${json_start_time%+00:00}  # remove +00:00
-        json_start_time_unix=$(date -j -f "%Y-%m-%dT%H:%M:%S" "$json_start_time" +"%s")
+        json_start_time_unix=$(date -j -u -f "%Y-%m-%dT%H:%M:%S" "$json_start_time" +"%s")
         formatted_start_time=$(date -r $json_start_time_unix "+%d.%m.%y, %H:%M:%S")
 
         # running time calc
-        json_running_time=$(echo $entry | jq -r '.duration')
         current_time_unix=$(date +%s)
-
-        running_time_seconds=$((current_time_unix + json_running_time))
+        running_time_seconds=$((current_time_unix - json_start_time_unix))
 
         days=$((running_time_seconds/86400))
         hours=$((running_time_seconds/3600%24))
