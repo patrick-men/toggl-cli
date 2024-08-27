@@ -1,8 +1,9 @@
 #!/bin/bash
 
 #TODO: Fix declarative use of list_entries
+script_dir="$(dirname "$(realpath "$0")")"
 
-source funcs.sh
+source "$script_dir/funcs.sh"
 
 # echo to create an empty line at the beginning of the output
 echo
