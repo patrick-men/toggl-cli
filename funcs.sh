@@ -53,7 +53,6 @@ function help() {
 
 }
 
-
 function entry_json_parser() {
     json_description=$(echo $1 | jq -r '.description')
     json_start_time=$(echo $1 | jq -r '.start')
@@ -337,7 +336,7 @@ function start_entry() {
         }' > /dev/null
 }
 
-function delete_entry() {
+function end_entry() {
     current_entry=$(curl -s -u $(cat $credentials_file | base64 -d) $current_entry_url)
     workspace_id=$(get_workspace_id)
 
