@@ -42,6 +42,10 @@ function help() {
     yellow_text "   -t   List all tags"
     yellow_text "   -d   Delete a time entry"
     echo
+    yellow_text "Declarative usage of start and list:"
+    yellow_text "   -s --description <description> --tag <tag> --duration <duration>"
+    yellow_text "   -l --type <now/interval> --start <start_date> --end <end_date>"
+    echo
     echo
     yellow_text "Note: You need to authenticate at least once before using other options."
 
