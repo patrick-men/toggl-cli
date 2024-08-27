@@ -337,7 +337,7 @@ function start_entry() {
         }' > /dev/null
 }
 
-function end_entry() {
+function delete_entry() {
     current_entry=$(curl -s -u $(cat $credentials_file | base64 -d) $current_entry_url)
     workspace_id=$(get_workspace_id)
 
