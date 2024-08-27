@@ -18,6 +18,10 @@ A simple CLI tool to interact with the toggl API.
        -p   List all projects
        -t   List all tags
        -d   Delete a time entry
+
+    Declarative usage of start and list:
+       -s --description <description> --tag <tag> --duration <duration>
+       -l --type <now/interval> --start <start_date> --end <end_date>
     
     Note: You need to authenticate at least once before using other options.
 ```
