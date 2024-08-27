@@ -10,14 +10,14 @@ A simple CLI tool to interact with the toggl API.
     Usage: toggl [options]
     
     Options:
-       -h   Show this help message and exit
-       -a   Prompts for email and password to authenticate
-       -s   Start a new time entry (starting time: now)
-       -e   End the current time entry
-       -l   List time entries
-       -p   List all projects
-       -t   List all tags
-       -d   Delete a time entry
+       -h, --help       Show this help message and exit
+       -a, --auth       Prompts for email and password to authenticate
+       -s, --start      Start a new time entry (starting time: now)
+       -e, --end        End the current time entry
+       -l, --list       List time entries
+       -p, --projects   List all projects
+       -t, --tags       List all tags
+       -d, --delete     Delete a time entry
 
     Declarative usage of start and list:
        -s --description <description> --tag <tag> --duration <duration>
