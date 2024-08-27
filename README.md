@@ -22,3 +22,4 @@ A simple CLI tool to interact with the toggl API.
     Note: You need to authenticate at least once before using other options.
 ```
 
+ 

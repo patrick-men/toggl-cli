@@ -125,45 +125,111 @@ function recent_entries_parser() {
     done
 }
 
-function list_entries() {
 
-    yellow_text "Do you wish to see the current time entry (1) or the entries within a given time range (2)?"
-    echo
-    read -p "Enter your choice: " choice
-    echo
+function now_entry_lookup() {
+    current_entry=$(curl -s -u $(cat $credentials_file | base64 -d) $current_entry_url)
 
-    if [[ $choice == "1" ]]; then
-        current_entry=$(curl -s -u $(cat $credentials_file | base64 -d) $current_entry_url)
+    if [[ $current_entry == "null" ]]; then
+        yellow_text "No current time entry."
+        return 1
+    else
+        entry_json_parser $current_entry
+    fi
+}
 
-        if [[ $current_entry == "null" ]]; then
-            yellow_text "No current time entry."
-            return 1
-        else
-            entry_json_parser $current_entry
-        fi
-
-    elif [[ $choice == "2" ]]; then
+function interval_entry_lookup() {
+    
+    if [[ "$#" -eq 2 ]]; then
+        start_date=$1
+        end_date=$2
+    else    
         read -p "Enter the start time in the following format > DD.MM.YY: " start_date
         echo
         read -p "Enter the end time in the following format > DD.MM.YY: " end_date
         echo
+    fi
 
-        # Convert start_time and end_time to the format "YYYY-MM-DDTHH:MM:SSZ"
-        start_time=$(date -j -f "%d.%m.%y" "$start_date" +"%Y-%m-%d")
-        end_time=$(date -j -f "%d.%m.%y" "$end_date" +"%Y-%m-%d")
+    yellow_text "Start date: $start_date"
+    yellow_text "End date: $end_date"
+    echo
+    
+    if [[ -z $start_date ]] || [[ -z $end_date ]]; then
+        red_text "Invalid time range. Please try again."
+        return 1
+    fi
 
-        queried_entries=$(curl -s -u $(cat $credentials_file | base64 -d) "$time_entries_url?start_date=$start_time&end_date=$end_time")
+    # Convert start_time and end_time to the format "YYYY-MM-DDTHH:MM:SSZ"
+    start_time=$(date -j -f "%d.%m.%y" "$start_date" +"%Y-%m-%d")
+    end_time=$(date -j -f "%d.%m.%y" "$end_date" +"%Y-%m-%d")
 
-        if [[ $queried_entries == "[]" ]]; then
-            yellow_text "No entries found within the given time range."
-            return 1
-        else
-            recent_entries_parser $queried_entries
-        fi
+    queried_entries=$(curl -s -u $(cat $credentials_file | base64 -d) "$time_entries_url?start_date=$start_time&end_date=$end_time")
 
+    if [[ $queried_entries == "[]" ]]; then
+        yellow_text "No entries found within the given time range."
+        return 1
     else
-        red_text "Invalid choice. Please try again."
-        list_entries
+        recent_entries_parser $queried_entries
+    fi
+}
+
+function list_entries() {    
+    if [[ "$#" -eq 0 ]]; then
+        yellow_text "Do you wish to see the current time entry (1) or the entries within a given time range (2)?"
+        echo
+        read -p "Enter your choice: " choice
+        echo
+
+        if [[ $choice == "1" ]]; then
+            now_entry_lookup
+
+        elif [[ $choice == "2" ]]; then
+            read -p "Enter the start time in the following format > DD.MM.YY: " start_date
+            echo
+            read -p "Enter the end time in the following format > DD.MM.YY: " end_date
+            echo
+            
+            interval_entry_lookup "$start_date" "$end_date"
+
+        else
+            red_text "Invalid choice. Please try again."
+            list_entries
+        fi
+    elif [[ "$#" -eq 3 ]]; then
+        for arg in "$@"; do
+            key=$(echo $arg | cut -d':' -f1)
+            value=$(echo $arg | cut -d':' -f2)
+                
+            case "$key" in
+                type)
+                    type=$value
+                    ;;
+                start)
+                    start_date=$value
+                    ;;
+                end)
+                    end_date=$value
+                    ;;
+                *)
+                    echo "Error: Unsupported flag $key" >&2
+                    exit 1
+                    ;;
+            esac
+        done
+
+        if [[ -z $type ]]; then
+            echo "Error: type not set" >&2
+            exit 1
+        elif [[ $type == "now" ]]; then
+            now_entry_lookup
+        elif [[ $type == "interval" ]]; then
+            interval_entry_lookup $start_date $end_date
+        else
+            echo "Error: Unsupported flag $type" >&2
+            exit 1
+        fi 
+    else
+        echo "Error: Unsupported amount of flags" >&2
+        exit 1
     fi
 }
 
@@ -195,24 +261,52 @@ function start_entry() {
 
     workspace_id=$(get_workspace_id)
 
-    yellow_text "Starting a new time entry..."
-    echo
+    if [[ "$#" -eq 0 ]]; then
+        yellow_text "Starting a new time entry..."
+        echo
 
-    read -p "Enter the description: " entry_description
-    
-    if list_tags > /dev/null; then
-        read -p "Enter the tags ($available_tags): " entry_tags
-    fi 
+        read -p "Enter the description: " entry_description
+        
+        if list_tags > /dev/null; then
+            read -p "Enter the tags ($available_tags): " entry_tags
+        fi 
 
-    if list_projects > /dev/null; then
-        read -p "Enter the project: " entry_project
+        if list_projects > /dev/null; then
+            read -p "Enter the project: " entry_project
+        fi
+        
+        read -p "Enter the start time (default: now): " entry_start_time
+        
+        read -p "Enter the duration (default: until stopped): " entry_duration
+        
+        read -p "Enter the stop time (default: when stopped): " entry_stop_time
+
+    else
+        while (( "$#" )); do
+            key=$(echo $1 | cut -d':' -f1)
+            value=$(echo $1 | cut -d':' -f2)
+
+            case "$key" in
+                description)
+                    entry_description=$value
+                    ;;
+                tags)
+                    entry_tags=$value
+                    ;;
+                duration)
+                    entry_duration=$value
+                    ;;
+                --) # end argument parsing
+                    break
+                    ;;
+                *)
+                    echo "Error: Unsupported flag $key" >&2
+                    exit 1
+                    ;;
+            esac
+            shift
+        done
     fi
-    
-    read -p "Enter the start time (default: now): " entry_start_time
-    
-    read -p "Enter the duration (default: until stopped): " entry_duration
-    
-    read -p "Enter the stop time (default: when stopped): " entry_stop_time
 
     # prep default values
 
@@ -241,7 +335,7 @@ function start_entry() {
         }' > /dev/null
 }
 
-function end_entry() {
+function delete_entry() {
     current_entry=$(curl -s -u $(cat $credentials_file | base64 -d) $current_entry_url)
     workspace_id=$(get_workspace_id)
 
