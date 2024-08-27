@@ -1,6 +1,8 @@
 #!/bin/bash
 
-source ./constants.sh
+script_dir="$(dirname "$(realpath "$0")")"
+
+source "$script_dir/constants.sh"
 
 # functions to add color to outputs
 color_reset=$(tput sgr0)
