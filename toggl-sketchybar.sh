@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#TODO: handle case where no task is ongoing
+#TODO: split into 3 > one with current task that stops task on click, one that starts task type X and one that starts task type Y
+
+
 source funcs.sh
 source constants.sh
 
