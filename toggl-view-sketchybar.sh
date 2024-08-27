@@ -1,28 +1,24 @@
 #!/bin/bash
 
-#TODO: handle case where no task is ongoing
-#TODO: split into 3 > one with current task that stops task on click, one that starts task type X and one that starts task type Y
+###############################################################
+# Plugin that shows the current Toggl entry in the Sketchybar #
+###############################################################
+
 script_dir="$(dirname "$(realpath "$0")")"
 
 source "$script_dir/funcs.sh"
 source "$script_dir/constants.sh"
 
-NAME="toggl"
+name="toggl-view"
 
 current_entry=$(curl -s -v -u $(cat "$credentials_file" | base64 -d) $current_entry_url 2>> ~/.sketchlog)
 if [[ $current_entry == "null" ]]; then
-    red_text "No current time entry found."
-    exit 1
+    output="No entry"
+    sketchybar -m --set $name label="$output"
+    exit 0
 fi
 
-
-DESCRIPTION=$(echo $current_entry | jq -r '.description')
-
-
-# Check if TASK is empty
-if [[ -z "$DESCRIPTION" ]]; then
-    DESCRIPTION="No task"
-fi
+description=$(echo $current_entry | jq -r '.description')
 
 # running time calc
 
@@ -38,15 +34,15 @@ running_time_seconds=$((current_time_unix - json_start_time_unix))
 
 
 if (( running_time_seconds < 60 )); then
-    TIME_RUNNING="0d 0h 0m"
+    time_running="0d 0h 0m"
 else
     days=$((running_time_seconds/86400))
     hours=$((running_time_seconds/3600%24))
     minutes=$((running_time_seconds/60%60))
 
-    TIME_RUNNING="${days}d ${hours}h ${minutes}m"
+    time_running="${days}d ${hours}h ${minutes}m"
 fi
 
-output="$(printf "%s - %s" "$DESCRIPTION" "$TIME_RUNNING" | xargs)"
+output="$(printf "%s - %s" "$description" "$time_running" | xargs)"
 
-sketchybar -m --set $NAME label="$output"
+sketchybar -m --set $name label="$output"
